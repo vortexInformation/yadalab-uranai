@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>占い｜西洋占星術・四柱推命・タロット</title>
+<title>YADALab占い｜西洋占星術・四柱推命・タロット</title>
 <style>
 :root{
 --bg:#14101f; --panel:#1e1838; --panel2:#1a1430; --panel3:#221a42;
@@ -79,7 +79,7 @@ section.fortune .intro{font-size:13.5px;color:var(--sub);margin:0 0 16px}
 .kv{margin:10px 0}
 .kv .k{font-size:12px;color:var(--gold);display:block;letter-spacing:.08em;font-weight:700}
 .kv .v{font-weight:700;font-size:16px;color:#fff}
-.flex2{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;justify-content:center}
+.flex2{display:flex;gap:22px;flex-wrap:wrap;align-items:center;justify-content:center}
 .flex2>.grow{flex:1 1 300px;min-width:0}
 .chart-box{flex:0 1 300px;min-width:0;text-align:center}
 .chart-box svg{max-width:100%;height:auto}
@@ -731,7 +731,7 @@ function masterEmblemSVG(stemIdx){
   return masterEmblemSVGOld(stemIdx);
 }
 /* ホロスコープ風円形チャート（第3版：紺地＋金線） */
-function chartSVG(sunL, moonL, ascL){
+function chartSVG(sunL, moonL, ascL, showAsc){
   const cx=150, cy=150, rOut=142, rIn=104;
   function pt(lon, r){
     const phi=(180-(lon-ascL))*Math.PI/180;
@@ -761,9 +761,9 @@ function chartSVG(sunL, moonL, ascL){
   + s
   + marker(sunL,"☉","#b06f14","太陽")
   + marker(moonL,"☽","#4a4190","月")
-  +'<circle cx="'+ascP[0].toFixed(1)+'" cy="'+ascP[1].toFixed(1)+'" r="13" fill="#0e0b20" stroke="#e9cf8f" stroke-width="1"/>'
+  +(showAsc===false?"":'<circle cx="'+ascP[0].toFixed(1)+'" cy="'+ascP[1].toFixed(1)+'" r="13" fill="#0e0b20" stroke="#e9cf8f" stroke-width="1"/>'
   +'<text x="'+ascP[0].toFixed(1)+'" y="'+(ascP[1]+4).toFixed(1)+'" text-anchor="middle" font-size="9.5" fill="#e9cf8f">ASC</text>'
-  +'<text x="'+ascP[0].toFixed(1)+'" y="'+(ascP[1]+30).toFixed(1)+'" text-anchor="middle" font-size="10.5" fill="#b9aed6">上昇点</text>'
+  +'<text x="'+ascP[0].toFixed(1)+'" y="'+(ascP[1]+30).toFixed(1)+'" text-anchor="middle" font-size="10.5" fill="#b9aed6">上昇点</text>')
   +'</svg>';
 }
 </script>
@@ -786,7 +786,7 @@ if(typeof document!=="undefined"){
     const [y,m,d]=dv.split("-").map(Number);
     if(y<1900||y>2100){ msg.textContent="生年月日は1900〜2100年の範囲で入力してください。"; return; }
     msg.textContent="";
-    const timeKnown=!$("timeUnknown").checked;
+    const timeKnown=!$("timeUnknown").checked && !!$("birthTime").value;
     let hh=12, mm=0;
     if(timeKnown && $("birthTime").value){ [hh,mm]=$("birthTime").value.split(":").map(Number); }
     const pi=Number(sel.value);
@@ -794,20 +794,31 @@ if(typeof document!=="undefined"){
     const r=computeAll(y,m,d,hh,mm,timeKnown,lon,lat);
     const jd=julianDay(y,m,d,hh+mm/60-9);
     const ascL=ascendant(jd,lat,lon);
-    const timeNote=timeKnown?"":'<p style="color:var(--sub);font-size:12.5px">※出生時間不明のため、月星座・ASC・時柱は目安です。</p>';
+    const timeNote=timeKnown?"":'<p style="color:var(--sub);font-size:12.5px">※出生時間不明のため、ASCは表示していません。月星座は時間帯で変わる場合に候補を表示します。時柱は表示されません。</p>';
 
     /* ===== 西洋占星術 ===== */
     const sunEl=SIGN_EL[r.sunI], moonEl=SIGN_EL[r.moonI];
     const P={core:EL_PHRASE[sunEl].core, sub:EL_PHRASE[moonEl]};
+    let moonHTML, ascHTML;
+    if(timeKnown){
+      moonHTML='<span class="v">'+SIGNS[r.moonI]+' '+GLYPHS[r.moonI]+'</span><br>'+MOON_TRAIT[r.moonI];
+      ascHTML='<span class="v">'+SIGNS[r.ascTI]+' '+GLYPHS[r.ascTI]+'</span><br>'+ASC_TRAIT[r.ascTI];
+    }else{
+      const m0=signOf(moonLongitude(julianDay(y,m,d,-9)));
+      const m1=signOf(moonLongitude(julianDay(y,m,d,23.98-9)));
+      if(m0===m1){ moonHTML='<span class="v">'+SIGNS[m0]+' '+GLYPHS[m0]+'</span><br>'+MOON_TRAIT[m0]+'（出生時間は不明ですが、この日は一日を通して同じ月星座です）'; }
+      else{ moonHTML='<span class="v">'+SIGNS[m0]+' または '+SIGNS[m1]+'</span><br>この日は月の星座が'+SIGNS[m0]+'から'+SIGNS[m1]+'へ移るため、月星座は出生時間によって変わります。'; }
+      ascHTML='<span class="v">不明</span><br>ASCは出生時間によって大きく変わるため、時間不明の場合は表示していません。';
+    }
     $("r-west").innerHTML=
       '<div class="flex2">'
       +'<div class="emblem-box">'+emblemSVG(r.sunI)+'<div class="emblem-cap">太陽星座の紋章モチーフ</div></div>'
-      +'<div class="chart-box">'+chartSVG(r.sunL, r.moonL, ascL)+'<div class="emblem-cap">ホロスコープ風チャート：ASCを左端に置き、太陽と月の位置を示しています</div></div>'
+      +'<div class="chart-box">'+chartSVG(r.sunL, r.moonL, timeKnown?ascL:r.sunL, timeKnown)+'<div class="emblem-cap">'+(timeKnown?'ホロスコープ風チャート：ASCを左端に置き、太陽と月の位置を示しています':'ホロスコープ風チャート：出生時間不明のためASCは表示せず、太陽と月の位置を示しています')+'</div></div>'
       +'</div>'
       +'<div class="grow" style="width:100%">'
       +'<p class="kv"><span class="k">太陽星座 ― 人生の軸・基本の性質</span><span class="v">'+SIGNS[r.sunI]+' '+GLYPHS[r.sunI]+'</span><br>'+SUN_TRAIT[r.sunI]+'。'+P.core+'が土台にあり、表に出る魅力として周囲に伝わります。</p>'
-      +'<p class="kv"><span class="k">月星座 ― 心の傾向・素の自分</span><span class="v">'+SIGNS[r.moonI]+' '+GLYPHS[r.moonI]+'</span><br>'+MOON_TRAIT[r.moonI]+'</p>'
-      +'<p class="kv"><span class="k">ASC（アセンダント） ― 第一印象</span><span class="v">'+SIGNS[r.ascTI]+' '+GLYPHS[r.ascTI]+'</span><br>'+ASC_TRAIT[r.ascTI]+'</p>'
+      +'<p class="kv"><span class="k">月星座 ― 心の傾向・素の自分</span>'+moonHTML+'</p>'
+      +'<p class="kv"><span class="k">ASC（アセンダント） ― 第一印象</span>'+ascHTML+'</p>'
       + timeNote
       +'<h4 class="mincho">総合リーディング（太陽×月のエレメントから）</h4>'
       +'<div class="comp-grid">'
@@ -845,18 +856,20 @@ if(typeof document!=="undefined"){
       +'<div class="flex2" style="margin-top:14px"><div class="emblem-box">'+masterEmblemSVG(dayIdx)+'<div class="emblem-cap">日主エンブレム</div></div>'
       +'<div class="grow"><p class="kv"><span class="k">日干（日主）― あなたの核となる気</span><span class="v">'+STEMS[dayIdx]+'（'+STEM_EL[dayIdx]+'・'+(dayIdx%2===0?"陽":"陰")+'）</span></p>'
       +'<p>'+MASTER_DETAIL[STEMS[dayIdx]]+'</p></div></div>'
-      +'<h4 class="mincho">五行バランス</h4>'+bars
-      +'<p>一番強いのは<strong>'+strongest+'の気</strong>です。'+EL_COMMENT[strongest]
-      +' 一方で<strong>'+weakest+'の気</strong>は控えめです。'+EL_COMMENT[weakest]+'を意識的に取り入れると、全体の流れが整いやすくなります。</p>'
+      +'<h4 class="mincho">五行の出現数（簡易集計）</h4>'+bars
+      +'<p>四柱に最も多く現れるのは<strong>'+strongest+'の気</strong>（'+r.counts[strongest]+'つ）です。'+EL_COMMENT[strongest]
+      +' 一方で<strong>'+weakest+'の気</strong>は'+r.counts[weakest]+'つと少なめです。'+EL_COMMENT[weakest]+'を意識的に取り入れると、全体の流れが整いやすくなります。</p>'
+      +'<p style="color:var(--sub);font-size:12.5px">※天干・地支に現れる五行の数を数えた簡易集計です。蔵干や月令による強弱判定とは異なります。</p>'
       + timeNote;
   });
 
   /* ===== タロット：裏向き9枚から3枚選んでフリップ ===== */
   const POSITIONS=[["状況","いま置かれている状況"],["課題","向き合うべき課題・障害"],["アドバイス","次の一手への助言"]];
-  let tDrawn=[], tSelected=[], tRevealed=false;
+  let tDrawn=[], tSelected=[], tRevealed=false, tTimers=[];
+  function tLater(fn,ms){ tTimers.push(setTimeout(fn,ms)); }
   function tDrawCards(){
     const idxs=[];
-    while(idxs.length<3){
+    while(idxs.length<9){
       const i=Math.floor(Math.random()*TAROT.length);
       if(!idxs.includes(i)) idxs.push(i);
     }
@@ -884,14 +897,14 @@ if(typeof document!=="undefined"){
     tRevealed=true;
     tRefreshDeck();
     tStatus("カードが開きます…");
-    tDrawn.forEach((card,k)=>{
+    tSelected.map(si=>tDrawn[si]).forEach((card,k)=>{
       const front=$("tfront"+k);
       front.className="tcard tface tface-front"+(card.rev?" rev":"");
       front.innerHTML=tFrontHTML(card.i);
       const inner=$("tflip"+k);
       inner.style.transitionDelay=(k*0.45)+"s";
-      setTimeout(()=>{ inner.classList.add("open"); },40);
-      setTimeout(()=>{
+      tLater(()=>{ inner.classList.add("open"); },40);
+      tLater(()=>{
         const lab=$("tlabel"+k);
         lab.className=card.rev?"rev-label":"up-label";
         lab.textContent=card.rev?"逆位置":"正位置";
@@ -912,12 +925,13 @@ if(typeof document!=="undefined"){
         tSelected.push(k);
       }
       tRefreshDeck();
-      if(tSelected.length===3){ tStatus("3枚そろいました。カードを開きます。"); setTimeout(tReveal,650); }
+      if(tSelected.length===3){ tStatus("3枚そろいました。カードを開きます。"); tLater(tReveal,650); }
       else tStatus("カードをあと"+(3-tSelected.length)+"枚選んでください（選択中 "+tSelected.length+" / 3）。");
     });
   });
   $("tarotOpenBtn").addEventListener("click", tReveal);
   $("tarotResetBtn").addEventListener("click",()=>{
+    tTimers.forEach(clearTimeout); tTimers=[];
     tRevealed=false;
     tSelected=[];
     tDrawCards();
