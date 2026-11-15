@@ -16,6 +16,7 @@ color-scheme:dark;
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
+overflow-x:hidden;
 background-color:var(--bg);
 background-image:
  radial-gradient(1.2px 1.2px at 22px 34px, rgba(255,244,200,.85) 50%, transparent 52%),
@@ -107,7 +108,7 @@ table.meishiki td.lbl{background:#171230;font-size:12px;color:var(--sub);width:4
 .bar-fill{height:11px;border-radius:99px;background:linear-gradient(90deg,var(--gold-deep),var(--gold-light))}
 .bar-row .n{width:2em;text-align:right;flex:none;color:var(--sub)}
 /* タロット */
-.tarot-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;max-width:780px;margin:16px auto 4px}
+.tarot-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;max-width:780px;margin:16px auto 4px;justify-items:center}
 @media (max-width:680px){.tarot-cards{grid-template-columns:1fr;max-width:330px}}
 .tarot-slot{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;padding:0 4px}
 .tarot-slot .pos{font-weight:700;color:var(--gold-pale);font-size:14px;margin-bottom:2px}
@@ -239,7 +240,7 @@ background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(233,207,143,.13) 
 .tarot-btns{text-align:center;margin:8px 0 2px}
 .tarot-btns .btn{margin-top:8px}
 .btn[disabled]{opacity:.45;cursor:default}
-.tflip{perspective:900px;width:168px;max-width:100%;aspect-ratio:5/8.6;margin:0 auto;flex:none}
+.tflip{perspective:900px;width:168px;max-width:100%;aspect-ratio:5/8.6;margin:0 auto;flex:none;align-self:center}
 .tflip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.4,.1,.3,1)}
 .tflip-inner.open{transform:rotateY(180deg)}
 .tface{position:absolute;inset:0;-webkit-backface-visibility:hidden;backface-visibility:hidden;border-radius:12px}
@@ -334,6 +335,14 @@ box-shadow:0 8px 22px rgba(0,0,0,.55)}
 <p class="tarot-btns"><button class="btn sub-btn" id="tarotOpenBtn" type="button" disabled>カードを開く</button>
 <button class="btn sub-btn" id="tarotResetBtn" type="button">もう一度引く</button></p>
 <p class="memo">必要な入力：なし ／ 大アルカナ22枚・正位置／逆位置で占います。</p>
+</section>
+
+<!-- ================= 4. 2027年の運勢 ================= -->
+<section class="fortune" id="mod-year">
+<h2 class="mincho">2027年の運勢</h2>
+<p class="intro">2027年（丁未）の流年と、数秘術のパーソナルイヤーから、あなたの2027年を読み解きます。</p>
+<div class="result" id="r-year"><span class="placeholder">「まとめて占う」を押すと結果が表示されます。</span></div>
+<p class="memo">必要な入力：生年月日 ／ 流年は四柱推命の日干と2027年の天干の関係、パーソナルイヤーは誕生日と2027年の数字から自動で出します。</p>
 </section>
 
 
@@ -647,6 +656,30 @@ function tsuhensei(dayIdx, targetIdx){
   return sameYY?"偏官":"正官";
 }
 
+/* 2027年の流年テキスト（通変星別） */
+const RYUNEN_TEXT={
+"比肩":"自分の足場を固める年。独立心が高まり、自分のやり方を通す力が強まります。仲間との競争も増えやすいので、張り合うより役割分担を決めることが鍵になります。",
+"劫財":"人との関わりで運が動く年。協力すれば大きく進みますが、お金と時間の貸し借りには線引きを。誘いが多い年ほど、断る基準を先に決めておくと安定します。",
+"食神":"楽しみと表現が運を運ぶ年。好きなこと・得意なことを表に出すと評価につながります。食や趣味など、生活の楽しみを増やす工夫が実りやすい年です。",
+"傷官":"腕と感性が目立つ年。仕事の質で勝負でき、転機も訪れやすい時期です。言葉が強くなりやすいので、伝える前のひと呼吸が運を守ります。",
+"偏財":"お金と人の流れが速くなる年。副収入や人脈経由のチャンスが巡りやすい時期です。動くお金が大きい分、記録と確認を丁寧にすると実りが残ります。",
+"正財":"堅実な積み上げが実る年。コツコツ型の働き方と貯蓄が評価され、安定した成果につながります。派手さより継続。毎月の小さな習慣が効く年です。",
+"偏官":"責任とスピードが求められる年。忙しくなりますが、引き受けた仕事が実力の証明になります。無理のしすぎに注意し、休む予定も先に入れておくことが大切です。",
+"正官":"評価と信頼が形になる年。昇進・資格・公の場での役割など、きちんとした成果が出やすい時期です。ルールを守る姿勢そのものが運を後押しします。",
+"偏印":"学びと変化の年。新しい知識や環境に触れるほど視野が広がります。興味が移りやすいので、深める対象を1つに絞ると力になります。",
+"印綬":"知識と資格が財産になる年。勉強や研究、目上の人からの助けが得やすい時期です。受け取るだけでなく、学んだことを人に渡すと運が巡ります。"};
+/* パーソナルイヤー（数秘術）の年テーマ */
+const PY_TEXT={
+1:"始まりの年。新しい挑戦や環境の切り替えに向きます。迷ったら「まず小さく始める」が合言葉です。",
+2:"調和の年。人間関係を育てる時期で、急ぐより合わせることで進みます。相談役としての評価も上がりやすい年です。",
+3:"表現の年。発信・創作・人前に出ることが運を広げます。楽しむ姿勢そのものが人を惹きつけます。",
+4:"土台の年。生活と仕事の基盤を整える時期。地味な改善と整理が、後半の伸びを支えます。",
+5:"変化の年。移動や挑戦、思い切った方向転換が起こりやすい時期です。柔軟さが最大の武器になります。",
+6:"愛情と責任の年。家族や大切な人との関係がテーマ。面倒を見る側に立つことで信頼が厚くなります。",
+7:"内省の年。一人の時間と学びが深まる時期です。答えを急がず、専門性を磨くことに向きます。",
+8:"実りの年。仕事とお金の成果が出やすい時期。受け取る覚悟と、数字への正直さが鍵になります。",
+9:"完了の年。手放しと整理の時期です。終わらせることで、翌年からの新しい流れの場所が空きます。"};
+
 /* 紋章風エンブレム（太陽星座）第3版：月桂樹＋星屑＋金グラデーション */
 function sparkle(x,y,s){
   return '<path d="M '+x+' '+(y-s)+' Q '+x+' '+y+' '+(x+s)+' '+y+' Q '+x+' '+y+' '+x+' '+(y+s)+' Q '+x+' '+y+' '+(x-s)+' '+y+' Q '+x+' '+y+' '+x+' '+(y-s)+' Z" fill="#e9cf8f"/>';
@@ -861,6 +894,18 @@ if(typeof document!=="undefined"){
       +' 一方で<strong>'+weakest+'の気</strong>は'+r.counts[weakest]+'つと少なめです。'+EL_COMMENT[weakest]+'を意識的に取り入れると、全体の流れが整いやすくなります。</p>'
       +'<p style="color:var(--sub);font-size:12.5px">※天干・地支に現れる五行の数を数えた簡易集計です。蔵干や月令による強弱判定とは異なります。</p>'
       + timeNote;
+
+    /* ===== 2027年の運勢 ===== */
+    const yStem27=3; /* 2027年は丁未：天干インデックス3=丁 */
+    const ryStar=tsuhensei(dayIdx, yStem27);
+    const ds27=n=>String(n).split("").reduce((a,c)=>a+ +c,0);
+    let pySum=ds27(m)+ds27(d)+ds27(2027);
+    while(pySum>9) pySum=ds27(pySum);
+    $("r-year").innerHTML=
+      '<div class="comp-grid">'
+      +'<div class="comp-item"><div class="t">流年（四柱推命）― 2027年 丁未</div><p>あなたの日干（'+STEMS[dayIdx]+'）から見た2027年の天干「丁」は、通変星で<strong>'+ryStar+'</strong>にあたります。'+RYUNEN_TEXT[ryStar]+'</p></div>'
+      +'<div class="comp-item"><div class="t">パーソナルイヤー（数秘術）― '+pySum+'</div><p>'+PY_TEXT[pySum]+'</p></div>'
+      +'</div>';
   });
 
   /* ===== タロット：裏向き9枚から3枚選んでフリップ ===== */
